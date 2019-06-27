@@ -77,7 +77,6 @@ BUILDSYS_BUILD_EXE(
 ######################################################################################
 # Build function for cartesian_coords
 ######################################################################################
-
 SET(SRCS
   cartesian_coords/cartesian_coords.cpp
 )
@@ -91,6 +90,10 @@ BUILDSYS_BUILD_EXE(
     DEPENDS nifalcon_cli_base
     SHOULD_INSTALL TRUE
 )
+
+# requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
+find_package(cppzmq)
+target_link_libraries(cartesian_coords cppzmq)
 
 
 ######################################################################################

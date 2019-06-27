@@ -12,7 +12,6 @@
  *
  */
 
-#include "falcon/core/FalconLogger.h"
 #include "falcon/core/FalconDevice.h"
 #include "falcon/firmware/FalconFirmwareNovintSDK.h"
 #include "falcon/util/FalconFirmwareBinaryNvent.h"
@@ -20,49 +19,67 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
-#include <csignal>
-#include "stdint.h"
-#ifdef ENABLE_LOGGING
-#include <log4cxx/logger.h>
-#include <log4cxx/basicconfigurator.h>
-#include <log4cxx/helpers/exception.h>
-#include <log4cxx/patternlayout.h>
-#include <log4cxx/consoleappender.h>
-static const log4cxx::LogString TTCC_CONVERSION_PATTERN(LOG4CXX_STR("%-5p [%c] - %m%n"));
+#include <string>
 
-/**
- * Statically initialize the log4cxx library.
- */
-void configureLogging(const std::string logString, const log4cxx::LevelPtr level) {
-	log4cxx::LayoutPtr layout(new log4cxx::PatternLayout(logString));
-	log4cxx::AppenderPtr appender(new log4cxx::ConsoleAppender(layout));
-	log4cxx::BasicConfigurator::configure(appender);
-	log4cxx::LoggerPtr rootlogger = log4cxx::Logger::getRootLogger();
-	rootlogger->setLevel(level);
-}
-#endif
-
+#include <zmq.hpp>
+#include <unistd.h>
 
 using namespace libnifalcon;
 
-#define PACKET_TIMEOUT 1000
+void runFalconTest();
 
-void sigproc(int i)
+int main()
 {
-	std::cout << "closing falcon and quitting" << std::endl;
-	exit(0);
-}
+    /*======================================================================================
+    zmq::context_t context (1);
+    //zmq::socket_t socket (context, ZMQ_PUSH);
+    zmq::socket_t socket (context, ZMQ_PUB);
+
+    std::cout << "Connecting to hello world server…" << std::endl;
+    socket.connect ("tcp://localhost:5565");
+
+    //  Do 10 requests, waiting each time for a response
+    //for (int request_nbr = 0; request_nbr != 1000; request_nbr++) {
+    unsigned int request_nbr = 0;
+    while (true) {
+        std::string msg = std::to_string(request_nbr++);
+        std::cout << "Sending Hello " << msg << "…" << std::endl;
+        socket.send (zmq::buffer(msg), zmq::send_flags::none);
+
+        usleep(50000);
+
+    }
+    =============================================================================*/
+
+    runFalconTest();
+    return 0;
+    }
 
 void runFalconTest()
 {
+    zmq::context_t context (1);
+    zmq::socket_t pub (context, ZMQ_PUB);
+    zmq::socket_t sub (context, ZMQ_SUB);
+
+    pub.connect ("tcp://localhost:5565");
+    sub.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    sub.bind("tcp://*:5568");
+
+    //  Do 10 requests, waiting each time for a response
+    //for (int request_nbr = 0; request_nbr != 1000; request_nbr++) {
+//    unsigned int request_nbr = 0;
+//    while (true) {
+//        std::string msg = std::to_string(request_nbr++);
+//        std::cout << "Sending Hello " << msg << "…" << std::endl;
+//        socket.send (zmq::buffer(msg), zmq::send_flags::none);
+
+//        usleep(50000);
+
+//    }
+
     std::shared_ptr<FalconFirmware> firmware;
-	FalconKinematic* k;
-	double position[3];
 	unsigned int num_falcons = 0;
-	int status, i;
 	unsigned int count;
-	unsigned int error_count = 0;
-	unsigned int loop_count = 0;
 	FalconDevice dev;
 
     dev.setFalconFirmware<FalconFirmwareNovintSDK>();   //idk
@@ -79,7 +96,7 @@ void runFalconTest()
 
 	count = 0;
 
-	std::cout << "Falcons found: " << (int)num_falcons << std::endl;
+    std::cout << "Falcons found: " << static_cast<int>(num_falcons) << std::endl;
 
 	if(num_falcons == 0)
 	{
@@ -87,7 +104,7 @@ void runFalconTest()
 		return;
 	}
 
-	for(int z = 0; z < num_falcons; ++z)
+    for(unsigned int z = 0; z < num_falcons; ++z)
 	{
 		std::cout << "Opening falcon " << z + 1  << std::endl;
 
@@ -101,38 +118,55 @@ void runFalconTest()
 		if(!dev.isFirmwareLoaded())
 		{
 			std::cout << "Loading firmware" << std::endl;
-			for(int i = 0; i < 10; ++i)
-			{
-				if(!dev.getFalconFirmware()->loadFirmware(true, NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(NOVINT_FALCON_NVENT_FIRMWARE)))
-				{
-					std::cout << "Could not load firmware" << std::endl;
-					return;
-				}
-				else
-				{
-					std::cout <<"Firmware loaded" << std::endl;
-					break;
-				}
-			}
-			if(!dev.isFirmwareLoaded())
-			{
-				std::cout << "Firmware didn't load correctly. Try running findfalcons again" << std::endl;
-				return;
-			}
+            if(!dev.getFalconFirmware()->loadFirmware(true, NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(NOVINT_FALCON_NVENT_FIRMWARE)))
+            {
+                std::cout << "Could not load firmware" << std::endl;
+                return;
+            }
+            else
+            {
+                std::cout <<"Firmware loaded" << std::endl;
+                break;
+            }
 		}
 
         for(int j = 0; j < 3; ++j)
 		{
-            firmware->setLEDStatus(2 << (j % 3));
-			for(int i = 0; i < 1000; )
+            firmware->setLEDStatus(static_cast<unsigned int>(2 << (j % 3)));
+            for(int i = 0; i < 10000; )
 			{
 				if(dev.runIOLoop()) ++i;
 				else continue;
                 std::array<double, 3> pos = dev.getPosition();
                 // offset z
                 pos[2] -= 0.11;
-                printf("Loops: %8d | Enc1: %5d | Enc2: %5d | Enc3: %5d | X: %.5f | Y: %.5f | Z: %.5f\n",
-                       (j*1000)+i,  firmware->getEncoderValues()[0], firmware->getEncoderValues()[1], firmware->getEncoderValues()[2], pos[0], pos[1], pos[2]);
+                //printf("Loops: %8d | Enc1: %5d | Enc2: %5d | Enc3: %5d | X: %.5f | Y: %.5f | Z: %.5f\n",
+                //       (j*1000)+i,  firmware->getEncoderValues()[0], firmware->getEncoderValues()[1], firmware->getEncoderValues()[2], pos[0], pos[1], pos[2]);
+                std::string msg = std::to_string(pos[0]) + " " + std::to_string(pos[1]) + " " + std::to_string(pos[2]);
+                //std::cout << "Sending data " << msg << std::endl;
+                pub.send (zmq::buffer(msg), zmq::send_flags::none);
+                usleep(33000);
+                zmq::message_t zmqMsg;
+                while (sub.recv(zmqMsg, zmq::recv_flags::dontwait)) {
+                    std::string rcvStr = std::string(static_cast<char*>(zmqMsg.data()), zmqMsg.size());
+                    std::cout << rcvStr << std::endl;
+                    char cstr[rcvStr.size() + 1];
+                    std::strcpy(cstr, rcvStr.c_str());
+                    char * pch;
+                    pch = std::strtok(cstr, "(), ");
+                    unsigned long forceidx = 0;
+                    std::array<double, 3> force;
+                    while (pch != nullptr) {
+                        //std::string tempStr = pch;
+                        //std::cout << tempStr << std::endl;
+                        force[forceidx++] = std::atof(pch) * 1.5;
+                        std::cout << pch << std::endl;
+                        pch = std::strtok(nullptr, "(), ");
+                        //force[forceidx++] = std::atof(tempStr.c_str());
+                    }
+                    dev.setForce(force);
+                }
+
 				++count;
 			}
 		}
@@ -140,21 +174,4 @@ void runFalconTest()
 		dev.runIOLoop();
 		dev.close();
 	}	
-}
-
-int main(int argc, char** argv)
-{
-	signal(SIGINT, sigproc);
-#ifndef WIN32
-	signal(SIGQUIT, sigproc);
-#endif
-
-#ifdef ENABLE_LOGGING
-	std::string logPattern(TTCC_CONVERSION_PATTERN);
-	log4cxx::LevelPtr logLevel = log4cxx::Level::toLevel("DEBUG");
-	configureLogging(logPattern, logLevel);
-#endif
-
-	runFalconTest();
-	return 0;
 }
