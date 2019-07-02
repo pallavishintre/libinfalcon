@@ -95,6 +95,28 @@ BUILDSYS_BUILD_EXE(
 find_package(cppzmq)
 target_link_libraries(cartesian_coords cppzmq)
 
+######################################################################################
+# Build function for pd_ontroller
+######################################################################################
+SET(SRCS
+  pd_controller/pd_controller.cpp
+  pd_controller/util.cpp
+)
+
+BUILDSYS_BUILD_EXE(
+    NAME pd_controller
+    SOURCES "${SRCS}"
+    CXX_FLAGS "${DEFINE}"
+    LINK_LIBS "${LIBNIFALCON_EXE_PO_LINK_LIBS}"
+    LINK_FLAGS FALSE
+    DEPENDS nifalcon_cli_base
+    SHOULD_INSTALL TRUE
+)
+
+# requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
+find_package(cppzmq)
+target_link_libraries(pd_controller cppzmq)
+
 
 ######################################################################################
 # Build function for falcon_test_cli

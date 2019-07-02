@@ -86,7 +86,6 @@ void runFalconTest()
 	for(int z = 0; z < num_falcons; ++z)
 	{
 		std::cout << "Opening falcon " << z + 1  << std::endl;
-
 		if(!dev.open(z))
 		{
 			std::cout << "Cannot open falcon - Error: " << std::endl; // << dev.getErrorCode() << std::endl;

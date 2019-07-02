@@ -140,6 +140,7 @@ void runFalconTest()
                 std::array<double, 3> pos = dev.getPosition();
                 // offset z
                 pos[2] -= 0.11;
+                pos[1] += 0.05;
                 //printf("Loops: %8d | Enc1: %5d | Enc2: %5d | Enc3: %5d | X: %.5f | Y: %.5f | Z: %.5f\n",
                 //       (j*1000)+i,  firmware->getEncoderValues()[0], firmware->getEncoderValues()[1], firmware->getEncoderValues()[2], pos[0], pos[1], pos[2]);
                 std::string msg = std::to_string(pos[0]) + " " + std::to_string(pos[1]) + " " + std::to_string(pos[2]);
@@ -150,7 +151,8 @@ void runFalconTest()
                 while (sub.recv(zmqMsg, zmq::recv_flags::dontwait)) {
                     std::string rcvStr = std::string(static_cast<char*>(zmqMsg.data()), zmqMsg.size());
                     std::cout << rcvStr << std::endl;
-                    char cstr[rcvStr.size() + 1];
+                    char cstr[100];
+                    memset(cstr, 0, sizeof(cstr));
                     std::strcpy(cstr, rcvStr.c_str());
                     char * pch;
                     pch = std::strtok(cstr, "(), ");
@@ -164,6 +166,8 @@ void runFalconTest()
                         pch = std::strtok(nullptr, "(), ");
                         //force[forceidx++] = std::atof(tempStr.c_str());
                     }
+                    force[1] = 0;
+                    force[2] = 0;
                     dev.setForce(force);
                 }
 
