@@ -18,7 +18,6 @@ using namespace libnifalcon;
 
 void runFalconTest();
 [[noreturn]]void pd_point_to_point_test();
-[[noreturn]]void pd_point_to_point_test_multi();
 [[noreturn]]void simulator();
 
 int main()
@@ -44,8 +43,7 @@ int main()
     }
     =============================================================================*/
     init_falcon();
-    //pd_point_to_point_test();
-    pd_point_to_point_test_multi();
+    pd_point_to_point_test();
     //init_zmq(5557, 5558);
     //simulator();
 }
@@ -53,11 +51,11 @@ int main()
 void pd_point_to_point_test() {
     std::array<double, 3> pos_command = {0, 0.05, 0};
     std::array<double, 3> force_setpoint = {0, 0, 0};
-    std::array<double, 3> pos_previous = dev[0].getPosition();
+    std::array<double, 3> pos_previous = dev.getPosition();
     pos_previous[2] -= 0.125; //offset z
     double kp_x = 300, kp_y = 300, kp_z = 300;    //Proportional gains
     //double ki_x = 3000, ki_y = 3000, ki_z = 3000;        //Integral gain
-    double kd_x = 100000000, kd_y = 100000000, kd_z = 100000000;  //Derivative gains
+    double kd_x = 10000000, kd_y = 10000000, kd_z = 10000000;  //Derivative gains
     double err_x, err_y, err_z; //Proportional error
     //static double err_intx = 0, err_inty = 0, err_intz = 0;    //Integral of error
     double err_dx_dt = 0, err_dy_dt = 0, err_dz_dt = 0;  //Derivative of error
@@ -66,8 +64,8 @@ void pd_point_to_point_test() {
     int seconds_counter = 0;
     clock_gettime(CLOCK_REALTIME, &prev_ts);
     while (true) {
-        if (dev[0].runIOLoop()) {
-            std::array<double, 3> pos_current = dev[0].getPosition();
+        if (dev.runIOLoop()) {
+            std::array<double, 3> pos_current = dev.getPosition();
             clock_gettime(CLOCK_REALTIME, &current_ts);
             dt = (current_ts.tv_nsec - prev_ts.tv_nsec)/1000000000.0;//Converts to seconds
             prev_ts = current_ts;
@@ -107,7 +105,7 @@ void pd_point_to_point_test() {
                    dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0);*/
 
             //send force command to Falcon
-            dev[0].setForce(force_setpoint);
+            dev.setForce(force_setpoint);
 
             //update previous position and time
             pos_previous = pos_current;
@@ -115,87 +113,21 @@ void pd_point_to_point_test() {
             pos_command[0] = 0.015 * cos(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
             //pos_command[1] = 0.02 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 4);
             pos_command[2] = 0.015 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
-        }
-    }
-}
 
-void pd_point_to_point_test_multi() {
-    std::array<double, 3> pos_command = {0, 0, 0};
-    std::vector<std::array<double, 3>> force_setpoint;
-    for (unsigned int i = 0; i < num_falcons; i++) {
-        force_setpoint.push_back({0, 0, 0});
-    }
-    std::vector<std::array<double, 3>> pos_previous;
-    for (unsigned int i = 0; i < num_falcons; i++) {
-        pos_previous.push_back(dev[i].getPosition());
-        pos_previous[i][2] -= 0.125; //offset z
-    }
-    double kp_x = 150, kp_y = 150, kp_z = 150;    //Proportional gains
-    double kd_x = 300000, kd_y = 300000, kd_z = 300000;  //Derivative gains
-    std::vector<double> err_x, err_y, err_z;    //Proportional error
-    std::vector<double> err_dx_dt, err_dy_dt, err_dz_dt;
-    for (unsigned int i = 0; i < num_falcons; i++) {
-        err_x.push_back(0);
-        err_y.push_back(0);
-        err_z.push_back(0);
-        err_dx_dt.push_back(0);
-        err_dy_dt.push_back(0);
-        err_dz_dt.push_back(0);
-    }
-    timespec prev_ts, current_ts;
-    double dt;
-    int seconds_counter = 0;
-    clock_gettime(CLOCK_REALTIME, &prev_ts);
-    while (true) {
-        std::vector<std::array<double, 3>> pos_current;
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            while (!dev[i].isOpen()) dev[i].open(i);
-            dev[i].runIOLoop();
+            /*if (time(nullptr) % 4 == 0) {
+                pos_command[0] = -0.01;
+                pos_command[1] = -0.01;
+            } else if (time(nullptr) % 4 == 1) {
+                pos_command[0] = -0.01;
+                pos_command[1] = 0.01;
+            } else if (time(nullptr) % 4 == 2) {
+                pos_command[0] = 0.01;
+                pos_command[1] = 0.01;
+            } else {
+                pos_command[0] = 0.01;
+                pos_command[1] = -0.01;
+            }*/
         }
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            while (!dev[i].isOpen()) dev[i].open(i);
-            pos_current.push_back(dev[i].getPosition());
-            pos_current[i][2] -= 0.125; //offset z
-        }
-        clock_gettime(CLOCK_REALTIME, &current_ts);
-        dt = (current_ts.tv_nsec - prev_ts.tv_nsec)/1000000000.0;//Converts to seconds
-        prev_ts = current_ts;
-        if (dt < 0) {
-            seconds_counter++;
-            continue;
-        }
-        //Calculate error
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            err_x[i] = pos_current[i][0] - pos_command[0];
-            err_y[i] = pos_current[i][1] - pos_command[1];
-            err_z[i] = pos_current[i][2] - pos_command[2];
-        }
-        //Calculate rate of change of error
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            err_dx_dt[i] = ((pos_current[i][0] - pos_command[0]) - (pos_previous[i][0] - pos_command[0])) * dt;
-            err_dy_dt[i] = ((pos_current[i][1] - pos_command[1]) - (pos_previous[i][1] - pos_command[1])) * dt;
-            err_dz_dt[i] = ((pos_current[i][2] - pos_command[2]) - (pos_previous[i][2] - pos_command[2])) * dt;
-        }
-        //Calculate force_setpoint
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            force_setpoint[i][0] = -(err_x[i] * kp_x) - (err_dx_dt[i] * kd_x);
-            force_setpoint[i][1] = -(err_y[i] * kp_y) - (err_dy_dt[i] * kd_y);
-            force_setpoint[i][2] = -(err_z[i] * kp_z) - (err_dz_dt[i] * kd_z);
-        }
-
-
-        //send force command to Falcons
-        for (unsigned int i = 0; i < num_falcons; i++) {
-            while (!dev[i].isOpen()) dev[i].open(i);
-            dev[i].setForce(force_setpoint[i]);
-        }
-
-        //update previous position and time
-        pos_previous = pos_current;
-
-        pos_command[0] = 0.015 * cos(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
-        //pos_command[1] = 0.02 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 4);
-        pos_command[2] = 0.015 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
     }
 }
 
@@ -203,25 +135,25 @@ void simulator() {
     std::cout << "Entered simulator" << std::endl;
 
     zmq::context_t context (1);
-    pub1 = zmq::socket_t(context, ZMQ_PUB);
-    sub1 = zmq::socket_t(context, ZMQ_SUB);
+    pub = zmq::socket_t(context, ZMQ_PUB);
+    sub = zmq::socket_t(context, ZMQ_SUB);
 
     std::string pubSocket1 = "tcp://localhost:" + std::to_string(5557);
     std::string subSocket1 = "tcp://*:" + std::to_string(5558);
     std::cout << pubSocket1 << " " << subSocket1 << std::endl;
 
     //pub.setsockopt(ZMQ_CONFLATE, 1);
-    pub1.connect (pubSocket1);
+    pub.connect (pubSocket1);
     std::cout << "pub connected" << std::endl;
 
-    sub1.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-    sub1.setsockopt(ZMQ_CONFLATE, 1);
-    sub1.bind(subSocket1);
+    sub.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+    sub.setsockopt(ZMQ_CONFLATE, 1);
+    sub.bind(subSocket1);
     std::cout << "Sockets are ready" << std::endl;
 
     std::array<double, 3> pos_command = {0, 0, 0};
     std::array<double, 3> force_setpoint = {0, 0, 0};
-    std::array<double, 3> pos_previous = dev[0].getPosition();
+    std::array<double, 3> pos_previous = dev.getPosition();
     pos_previous[2] -= 0.125; //offset z
     //double kp_x = 100, kp_y = 100, kp_z = 100;    //Proportional gains
     double kp_x = 0, kp_y = 0, kp_z = 0;    //Proportional gains
@@ -234,12 +166,12 @@ void simulator() {
     double sec_since_last_pub = 0;
     clock_gettime(CLOCK_REALTIME, &prev_ts);
     while (true) {
-        if (dev[0].runIOLoop()) {
+        if (dev.runIOLoop()) {
             clock_gettime(CLOCK_REALTIME, &current_ts);
             dt = (current_ts.tv_nsec - prev_ts.tv_nsec)/1000000000.0;//Converts to seconds
             if (dt < 0) dt = (current_ts.tv_nsec + 1000000000 - prev_ts.tv_nsec)/1000000000.0;
 
-            std::array<double, 3> pos_current = dev[0].getPosition();
+            std::array<double, 3> pos_current = dev.getPosition();
             //offset z
             pos_current[2] -= 0.125;
 
@@ -288,7 +220,7 @@ void simulator() {
                    dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0);
 
             //send force command to Falcon
-            dev[0].setForce(force_setpoint);
+            dev.setForce(force_setpoint);
 
             //update previous position and time
             pos_previous = pos_current;
@@ -300,12 +232,12 @@ void simulator() {
             if (sec_since_last_pub > 1/30.0) {
                 std::string msg = std::to_string(pos_current[0]) + " " + std::to_string(pos_current[1]) + " " + std::to_string(-pos_current[2]);
                 std::cout << "Sending data " << msg << " Current setpoint: " << force_setpoint[0] << " " << force_setpoint[1] << " " << force_setpoint[2] << std::endl;
-                pub1.send (zmq::buffer(msg), zmq::send_flags::dontwait);
+                pub.send (zmq::buffer(msg), zmq::send_flags::dontwait);
                 sec_since_last_pub = 0;
             }
 
             zmq::message_t zmqMsg;
-            while (sub1.recv(zmqMsg, zmq::recv_flags::dontwait)) {
+            while (sub.recv(zmqMsg, zmq::recv_flags::dontwait)) {
                 std::cout << "Processing incoming message" << std::endl;
                 std::string rcvStr = std::string(static_cast<char*>(zmqMsg.data()), zmqMsg.size());
                 std::cout << rcvStr << std::endl;
@@ -358,9 +290,9 @@ void runFalconTest()
         firmware->setLEDStatus(static_cast<unsigned int>(2 << (j % 3)));
         for(int i = 0; i < 10000; )
         {
-            if(dev[0].runIOLoop()) ++i;
+            if(dev.runIOLoop()) ++i;
             else continue;
-            std::array<double, 3> pos = dev[0].getPosition();
+            std::array<double, 3> pos = dev.getPosition();
             // offset z
             pos[2] -= 0.11;
             pos[1] += 0.05;
@@ -391,13 +323,13 @@ void runFalconTest()
                 }
                 force[1] = 0;
                 force[2] = 0;
-                dev[0].setForce(force);
+                dev.setForce(force);
             }
 
             ++count;
         }
     }
     firmware->setLEDStatus(0);
-    dev[0].runIOLoop();
-    dev[0].close();
+    dev.runIOLoop();
+    dev.close();
 }

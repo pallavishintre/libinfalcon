@@ -12,13 +12,14 @@
 #include <zmq.hpp>
 
 void init_falcon();
-void init_zmq(int base_socket_port);
+void init_zmq(int pub_socket_port, int sub_socket_port);
 
 extern std::shared_ptr<libnifalcon::FalconFirmware> firmware;
 extern unsigned int num_falcons;
 extern unsigned int count;
-extern std::vector<libnifalcon::FalconDevice> dev;
+extern libnifalcon::FalconDevice dev;
 
-extern zmq::socket_t pub1, sub1, pub2, sub2;
+extern zmq::socket_t pub;
+extern zmq::socket_t sub;
 
 #endif // LOADFIRMWARE_H
