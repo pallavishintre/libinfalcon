@@ -49,7 +49,7 @@ int main()
 }
 
 void pd_point_to_point_test() {
-    std::array<double, 3> pos_command = {0, 0.05, 0};
+    std::array<double, 3> pos_command = {0, 0.0, 0};
     std::array<double, 3> force_setpoint = {0, 0, 0};
     std::array<double, 3> pos_previous = dev.getPosition();
     pos_previous[2] -= 0.125; //offset z
@@ -75,6 +75,8 @@ void pd_point_to_point_test() {
             }
 
             //offset z
+            //pos_current[0] -= 0.025;
+            //pos_current[1] -= 0.035;
             pos_current[2] -= 0.125;
 
             //Calculate errorr
@@ -97,12 +99,12 @@ void pd_point_to_point_test() {
             force_setpoint[1] = -(err_y * kp_y) /*- (err_inty * ki_y)*/ - (err_dy_dt * kd_y);
             force_setpoint[2] = -(err_z * kp_z) /*- (err_intz * ki_z)*/ - (err_dz_dt * kd_z);
 
-            /*printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
+            printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
                    "err_dx_dt:%6.3f|err_dy_dt:%6.3f|"
                    "dt:%0.6f|nsec:%ld|sec:%f\n",
                    pos_current[0], pos_current[1], force_setpoint[0], force_setpoint[1],
                    err_dx_dt, err_dy_dt,
-                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0);*/
+                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0);
 
             //send force command to Falcon
             dev.setForce(force_setpoint);
@@ -110,9 +112,9 @@ void pd_point_to_point_test() {
             //update previous position and time
             pos_previous = pos_current;
 
-            pos_command[0] = 0.015 * cos(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
+            //pos_command[0] = 0.015 * cos(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
             //pos_command[1] = 0.02 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 4);
-            pos_command[2] = 0.015 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
+            //pos_command[2] = 0.015 * sin(current_ts.tv_nsec/1000000000.0 * 3.14159 * 2);
 
             /*if (time(nullptr) % 4 == 0) {
                 pos_command[0] = -0.01;
@@ -173,7 +175,8 @@ void simulator() {
 
             std::array<double, 3> pos_current = dev.getPosition();
             //offset z
-            pos_current[2] -= 0.125;
+            pos_current[2] -= 0.15;
+            //pos_current[1] += 0.05;
 
             //Calculate errorr
             err_x = pos_current[0] - pos_command[0];
@@ -214,10 +217,12 @@ void simulator() {
 
             printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
                    "err_dx_dt:%6.3f|err_dy_dt:%6.3f|"
-                   "dt:%0.6f|nsec:%ld|sec:%f\n",
+                   "dt:%0.6f|nsec:%ld|sec:%f|"
+                   "sin_xyz: %0.4f %0.4f %0.4f\n",
                    pos_current[0], pos_current[1], force_setpoint[0], force_setpoint[1],
                    err_dx_dt, err_dy_dt,
-                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0);
+                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0,
+                   sim_force_x, sim_force_y, sim_force_z);
 
             //send force command to Falcon
             dev.setForce(force_setpoint);
@@ -253,9 +258,9 @@ void simulator() {
                     std::cout << pch << std::endl;
                     pch = std::strtok(nullptr, "(), ");
                 }
-                sim_force_x = force[0]/1000.0;
-                sim_force_y = force[1]/1000.0;
-                sim_force_z = -force[2]/1000.0;
+                sim_force_x = force[0]/3000.0;
+                sim_force_y = force[1]/3000.0;
+                sim_force_z = -force[2]/3000.0;
             }
 
         }
