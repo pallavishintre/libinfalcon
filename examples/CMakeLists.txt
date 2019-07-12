@@ -119,6 +119,28 @@ target_link_libraries(pd_controller cppzmq)
 
 
 ######################################################################################
+# Build function for displacement_based_force
+######################################################################################
+SET(SRCS
+  displacement_based_force/displacement_based_force.cpp
+  displacement_based_force/util.cpp
+)
+
+BUILDSYS_BUILD_EXE(
+    NAME displacement_based_force
+    SOURCES "${SRCS}"
+    CXX_FLAGS "${DEFINE}"
+    LINK_LIBS "${LIBNIFALCON_EXE_PO_LINK_LIBS}"
+    LINK_FLAGS FALSE
+    DEPENDS nifalcon_cli_base
+    SHOULD_INSTALL TRUE
+)
+
+# requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
+find_package(cppzmq)
+target_link_libraries(displacement_based_force cppzmq)
+
+######################################################################################
 # Build function for falcon_test_cli
 ######################################################################################
 

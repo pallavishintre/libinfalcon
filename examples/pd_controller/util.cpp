@@ -58,6 +58,19 @@ void init_falcon() {
             std::cout << "Firmware already loaded" << std::endl;
         }
     }
+
+    while (!dev.getFalconFirmware()->isHomed()) {
+        dev.getFalconFirmware()->setHomingMode(true);
+        dev.runIOLoop();
+        if(!dev.getFalconFirmware()->isHomed())
+        {
+            dev.getFalconFirmware()->setLEDStatus(libnifalcon::FalconFirmware::RED_LED);
+            std::cout << "Falcon not currently calibrated. Move control all the way out then push straight all the way in." << std::endl;
+        }
+        std::cout << "Falcon calibrated successfully." << std::endl;
+        dev.getFalconFirmware()->setLEDStatus(libnifalcon::FalconFirmware::GREEN_LED);
+    }
+    return;
 }
 
 void init_zmq(int pub_socket_port, int sub_socket_port) {
