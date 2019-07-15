@@ -50,8 +50,8 @@ int main()
 
 std::array<double, 3> calculate_forces(std::array<double, 3> position, std::array<double, 3> old_position, double delta_time) {
     double scale = 750; //how many newtons per meter displacement to apply
-    double max_force = 1.5;  //Maximum force allowed
-    double warn_force = 1.5;
+    double max_force = 10;  //Maximum force allowed
+    double warn_force = 10;
     double co_dt = 5000000;   //coefficient for derivative
     std::array<double, 3> ret;
     for (unsigned int i = 0; i < 3; i++) {
@@ -81,8 +81,8 @@ void force_test() {
             clock_gettime(CLOCK_REALTIME, &ts);
             new_time = ts.tv_nsec;
             delta_time = new_time - old_time;
-            if (delta_time < 0) delta_time += 1000000000;
-            delta_time /= 1000000000.0;
+            if (delta_time < 0) delta_time += 1000000000;   //Offset by a billion nanoseconds to correct for a new second
+            delta_time /= 1000000000.0; //Convert to seconds
 
             force_setpoint = calculate_forces(position, old_position, delta_time);
             dev.setForce(force_setpoint);
