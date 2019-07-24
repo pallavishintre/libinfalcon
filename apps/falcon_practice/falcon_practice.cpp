@@ -1,21 +1,12 @@
 #include "falcon_practice.h"
 
-static zmq::socket_t pub, sub;
-
 using namespace libnifalcon;
 
-[[noreturn]]void simulator();
-
-int main()
-{
-    initializeFalcon();
-    simulator();
-}
-
-void simulator() {
+[[noreturn]] void simulator() {
     std::cout << "Setting up connection to simulation" << std::endl;
 
-    zmq::context_t context (1);
+    zmq::context_t context;
+    zmq::socket_t pub, sub;
     pub = zmq::socket_t(context, ZMQ_PUB);
     sub = zmq::socket_t(context, ZMQ_SUB);
 
@@ -144,3 +135,10 @@ void simulator() {
         }
     }
 }
+
+int main()
+{
+    initializeFalcon();
+    simulator();
+}
+
