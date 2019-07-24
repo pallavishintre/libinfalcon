@@ -5,27 +5,23 @@ bool calibrateDevice();
 using namespace libnifalcon;
 
 std::shared_ptr<libnifalcon::FalconFirmware> firmware;
-unsigned int num_falcons = 0;
-unsigned int count;
 libnifalcon::FalconDevice dev;
 
-zmq::socket_t pub;
-zmq::socket_t sub;
-
 static bool displayedCalibrateMessage = false;
+static unsigned int count;
+static unsigned int num_falcons;
 
-void initializeFalcon() {
+bool init_falcon() {
 
     dev.setFalconFirmware<FalconFirmwareNovintSDK>();   //idk
     dev.setFalconKinematic<FalconKinematicStamper>();   //For kinematics
 
     firmware = dev.getFalconFirmware();
 
-
     if(!dev.getDeviceCount(num_falcons))
     {
         std::cout << "Cannot get device count" << std::endl;
-        return;
+        return false;
     }
 
     count = 0;
@@ -34,15 +30,18 @@ void initializeFalcon() {
 
     if(num_falcons == 0)
     {
-        std::cout << "No falcons found, exiting..." << std::endl;
-        return;
+        std::cout << "No falcons found, exiting." << std::endl;
+        return false;
     }
 
-    for(unsigned int z = 0; z < num_falcons; ++z)
-    {
-        std::cout << "Opening falcon " << z + 1  << std::endl;
+    if (num_falcons > 1) {
+        std::cout << "Too many falcons found, please only connect one to this machine" << std::endl;
+        return false;
+    }
 
-        while (!dev.open(z))
+        std::cout << "Opening falcon "  << std::endl;
+
+        while (!dev.open(0))
         {
             std::cout << "Cannot open falcon - Error: " << std::endl; // << dev.getErrorCode() << std::endl;
             //return;
@@ -60,10 +59,9 @@ void initializeFalcon() {
         } else {
             std::cout << "Firmware already loaded" << std::endl;
         }
-    }
 
     while (!calibrateDevice());
-    return;
+    return true;
 }
 
 bool calibrateDevice()

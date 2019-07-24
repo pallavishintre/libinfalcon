@@ -14,7 +14,7 @@ zmq::socket_t sub;
 
 static bool displayedCalibrateMessage = false;
 
-void initializeFalcon() {
+void init_falcon() {
 
     dev.setFalconFirmware<FalconFirmwareNovintSDK>();   //idk
     dev.setFalconKinematic<FalconKinematicStamper>();   //For kinematics

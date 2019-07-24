@@ -2,6 +2,8 @@
 #define LOADFIRMWARE_H
 
 #include "falcon/core/FalconDevice.h"
+#include "falcon/grip/FalconGripFourButton.h"
+
 #include "falcon/firmware/FalconFirmwareNovintSDK.h"
 #include "falcon/util/FalconFirmwareBinaryNvent.h"
 #include "falcon/kinematic/FalconKinematicStamper.h"
@@ -11,7 +13,7 @@
 
 #include <zmq.hpp>
 
-void initializeFalcon();
+void init_falcon();
 void init_zmq(int pub_socket_port, int sub_socket_port);
 
 extern std::shared_ptr<libnifalcon::FalconFirmware> firmware;

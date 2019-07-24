@@ -141,6 +141,30 @@ find_package(cppzmq)
 target_link_libraries(displacement_based_force cppzmq)
 
 ######################################################################################
+# Build function for falcon_json
+######################################################################################
+SET(SRCS
+  falcon_json/falcon_json.cpp
+  ../util/util.cpp
+)
+
+BUILDSYS_BUILD_EXE(
+    NAME falcon_json
+    SOURCES "${SRCS}"
+    CXX_FLAGS "${DEFINE}"
+    LINK_LIBS "${LIBNIFALCON_EXE_PO_LINK_LIBS}"
+    LINK_FLAGS FALSE
+    DEPENDS nifalcon_cli_base
+    SHOULD_INSTALL TRUE
+)
+
+# requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
+find_package(cppzmq)
+find_package(nlohmann_json 3.2.0 REQUIRED)
+target_link_libraries(falcon_json cppzmq)
+target_link_libraries(falcon_json PRIVATE nlohmann_json::nlohmann_json)
+
+######################################################################################
 # Build function for falcon_test_cli
 ######################################################################################
 

@@ -1,17 +1,3 @@
-/***
- * @file findfalcons.cpp
- * @brief Minimal open-and-run test for the C++ version of libnifalcon
- * @author Kyle Machulis (kyle@nonpolynomial.com)
- * @version $Id$
- * @copyright (c) 2007-2008 Nonpolynomial Labs/Kyle Machulis
- * @license BSD License
- *
- * $HeadURL$
- *
- * Project info at http://libnifalcon.nonpolynomial.com/
- *
- */
-
 #include "displacement_based_force.h"
 
 using namespace libnifalcon;
@@ -42,7 +28,7 @@ int main()
 
     }
     =============================================================================*/
-    init_falcon();
+    initializeFalcon();
     force_test();
     //init_zmq(5557, 5558);
     //simulator();

@@ -1,5 +1,9 @@
-#ifndef LOADFIRMWARE_H
-#define LOADFIRMWARE_H
+#ifndef UTIL_H
+#define UTIL_H
+
+#include <string>
+#include <unistd.h>
+#include <thread>
 
 #include "falcon/core/FalconDevice.h"
 #include "falcon/grip/FalconGripFourButton.h"
@@ -8,20 +12,19 @@
 #include "falcon/util/FalconFirmwareBinaryNvent.h"
 #include "falcon/kinematic/FalconKinematicStamper.h"
 
-#include <string>
-#include <thread>
-
 #include <zmq.hpp>
 
-void initializeFalcon();
-void init_zmq(int pub_socket_port, int sub_socket_port);
+#include <nlohmann/json.hpp>
+
+bool initializeFalcon();
+
+void createSockets(std::string pub_address, std::string sub_address);
+void socketPublishJson(nlohmann::json j);
+nlohmann::json socketReadJson();
+
+void populateJsonDeviceCurrentPosition(nlohmann::json &j);
 
 extern std::shared_ptr<libnifalcon::FalconFirmware> firmware;
-extern unsigned int num_falcons;
-extern unsigned int count;
 extern libnifalcon::FalconDevice dev;
 
-extern zmq::socket_t pub;
-extern zmq::socket_t sub;
-
-#endif // LOADFIRMWARE_H
+#endif // UTIL_H

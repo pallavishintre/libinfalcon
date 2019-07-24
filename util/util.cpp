@@ -5,27 +5,23 @@ bool calibrateDevice();
 using namespace libnifalcon;
 
 std::shared_ptr<libnifalcon::FalconFirmware> firmware;
-unsigned int num_falcons = 0;
-unsigned int count;
 libnifalcon::FalconDevice dev;
 
-zmq::socket_t pub;
-zmq::socket_t sub;
+static bool displayed_calibrate_message = false;
+static unsigned int count;
+static unsigned int num_falcons;
 
-static bool displayedCalibrateMessage = false;
-
-void initializeFalcon() {
+bool initializeFalcon() {
 
     dev.setFalconFirmware<FalconFirmwareNovintSDK>();   //idk
     dev.setFalconKinematic<FalconKinematicStamper>();   //For kinematics
 
     firmware = dev.getFalconFirmware();
 
-
     if(!dev.getDeviceCount(num_falcons))
     {
         std::cout << "Cannot get device count" << std::endl;
-        return;
+        return false;
     }
 
     count = 0;
@@ -34,15 +30,18 @@ void initializeFalcon() {
 
     if(num_falcons == 0)
     {
-        std::cout << "No falcons found, exiting..." << std::endl;
-        return;
+        std::cout << "No falcons found, exiting." << std::endl;
+        return false;
     }
 
-    for(unsigned int z = 0; z < num_falcons; ++z)
-    {
-        std::cout << "Opening falcon " << z + 1  << std::endl;
+    if (num_falcons > 1) {
+        std::cout << "Too many falcons found, please only connect one to this machine" << std::endl;
+        return false;
+    }
 
-        while (!dev.open(z))
+        std::cout << "Opening falcon "  << std::endl;
+
+        while (!dev.open(0))
         {
             std::cout << "Cannot open falcon - Error: " << std::endl; // << dev.getErrorCode() << std::endl;
             //return;
@@ -60,10 +59,9 @@ void initializeFalcon() {
         } else {
             std::cout << "Firmware already loaded" << std::endl;
         }
-    }
 
     while (!calibrateDevice());
-    return;
+    return true;
 }
 
 bool calibrateDevice()
@@ -73,13 +71,21 @@ bool calibrateDevice()
     if(!dev.getFalconFirmware()->isHomed())
     {
         dev.getFalconFirmware()->setLEDStatus(libnifalcon::FalconFirmware::RED_LED);
-        if (!displayedCalibrateMessage){
+        if (!displayed_calibrate_message){
             std::cout << "Falcon not currently calibrated. Move control all the way out then push straight all the way in." << std::endl;
-            displayedCalibrateMessage = true;
+            displayed_calibrate_message = true;
         }
         return false;
     }
     std::cout << "Falcon calibrated successfully." << std::endl;
     dev.getFalconFirmware()->setLEDStatus(libnifalcon::FalconFirmware::GREEN_LED);
     return true;
+}
+
+void populateJsonDeviceCurrentPosition(nlohmann::json &j) {
+    dev.runIOLoop();
+    std::array<double, 3> pos = dev.getPosition();
+    j["current_position_x"] = pos[0];
+    j["current_position_y"] = pos[1];
+    j["current_position_z"] = pos[2];
 }

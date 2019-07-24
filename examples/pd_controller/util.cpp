@@ -10,7 +10,7 @@ libnifalcon::FalconDevice dev;
 zmq::socket_t pub;
 zmq::socket_t sub;
 
-void init_falcon() {
+void initializeFalcon() {
 
     dev.setFalconFirmware<FalconFirmwareNovintSDK>();   //idk
     dev.setFalconKinematic<FalconKinematicStamper>();   //For kinematics
