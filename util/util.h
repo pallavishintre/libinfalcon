@@ -22,7 +22,7 @@ void createSockets(std::string pub_address, std::string sub_address);
 void socketPublishJson(nlohmann::json j);
 nlohmann::json socketReadJson();
 
-void populateJsonDeviceCurrentPosition(nlohmann::json &j);
+void populateJsonDeviceCurrentPosition(nlohmann::json &j, double scale = 1);
 
 extern std::shared_ptr<libnifalcon::FalconFirmware> firmware;
 extern libnifalcon::FalconDevice dev;

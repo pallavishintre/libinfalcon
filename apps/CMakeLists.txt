@@ -28,7 +28,7 @@ SET(LIBNIFALCON_EXE_PO_LINK_LIBS ${LIBNIFALCON_EXE_LINK_LIBS} nifalcon_cli_base)
 
 SET(SRCS 
   test_falcon_connection/test_falcon_connection.cpp
-  util/util.cpp
+  ../util/util.cpp
 )
 
 BUILDSYS_BUILD_EXE(
@@ -47,7 +47,7 @@ BUILDSYS_BUILD_EXE(
 
 SET(SRCS
   test_falcon_impedance/test_falcon_impedance.cpp
-  util/util.cpp
+  ../util/util.cpp
 )
 
 BUILDSYS_BUILD_EXE(
@@ -66,7 +66,7 @@ BUILDSYS_BUILD_EXE(
 
 SET(SRCS
   falcon_practice/falcon_practice.cpp
-  util/util.cpp
+  ../util/util.cpp
 )
 
 BUILDSYS_BUILD_EXE(

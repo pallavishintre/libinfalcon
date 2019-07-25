@@ -82,10 +82,10 @@ bool calibrateDevice()
     return true;
 }
 
-void populateJsonDeviceCurrentPosition(nlohmann::json &j) {
+void populateJsonDeviceCurrentPosition(nlohmann::json &j, double scale) {
     dev.runIOLoop();
     std::array<double, 3> pos = dev.getPosition();
-    j["current_position_x"] = pos[0];
-    j["current_position_y"] = pos[1];
-    j["current_position_z"] = pos[2];
+    j["current_position_x"] = pos[0] * scale;
+    j["current_position_y"] = pos[1] * scale;
+    j["current_position_z"] = pos[2] * scale;
 }
