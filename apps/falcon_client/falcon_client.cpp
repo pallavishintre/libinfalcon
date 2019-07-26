@@ -16,7 +16,7 @@ static std::array<double, 3> force_setpoint = {0, 0, 0};
     std::cout << "Requester socket connected to " << reqSocketStr << std::endl;
 
     while (true) {
-        json["ID"] = 17;
+        json["ID"] = 1;
         json["force_x"] = -force_setpoint[0];
         json["force_y"] = -force_setpoint[1];
         json["force_z"] = -force_setpoint[2];
