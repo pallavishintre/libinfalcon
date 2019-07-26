@@ -52,10 +52,10 @@ using namespace libnifalcon;
             //offset z
             pos_current[2] -= 0.12;
 
-//            //Calculate error (difference in position between Falcon and HIP)
-//            err_x = hip_pos[0] - pos_current[0];
-//            err_y = hip_pos[1] - pos_current[1];
-//            err_z = hip_pos[2] - pos_current[2];
+            //            //Calculate error (difference in position between Falcon and HIP)
+            //            err_x = hip_pos[0] - pos_current[0];
+            //            err_y = hip_pos[1] - pos_current[1];
+            //            err_z = hip_pos[2] - pos_current[2];
 
             //Calculate error
             err_x = pos_command[0] - pos_current[0];
@@ -63,15 +63,15 @@ using namespace libnifalcon;
             err_z = pos_command[2] - pos_current[2];
 
 
-//            //Calculate rate of change of error (difference in velocity between Falcon and HIP)
-//            err_dx_dt = hip_vel[0] - ((pos_current[0] - hip_pos[0]) - (pos_previous[0] - hip_pos[0])) * dt;
-//            err_dy_dt = hip_vel[1] - ((pos_current[1] - hip_pos[1]) - (pos_previous[1] - hip_pos[1])) * dt;
-//            err_dz_dt = hip_vel[2] - ((pos_current[2] - hip_pos[2]) - (pos_previous[2] - hip_pos[2])) * dt;
+            //            //Calculate rate of change of error (difference in velocity between Falcon and HIP)
+            //            err_dx_dt = hip_vel[0] - ((pos_current[0] - hip_pos[0]) - (pos_previous[0] - hip_pos[0])) * dt;
+            //            err_dy_dt = hip_vel[1] - ((pos_current[1] - hip_pos[1]) - (pos_previous[1] - hip_pos[1])) * dt;
+            //            err_dz_dt = hip_vel[2] - ((pos_current[2] - hip_pos[2]) - (pos_previous[2] - hip_pos[2])) * dt;
 
             //Calculate rate of change of error (difference in velocity between Falcon and HIP)
-            err_dx_dt = ((pos_current[0] - hip_pos[0]) - (pos_previous[0] - hip_pos[0])) * dt;
-            err_dy_dt = ((pos_current[1] - hip_pos[1]) - (pos_previous[1] - hip_pos[1])) * dt;
-            err_dz_dt = ((pos_current[2] - hip_pos[2]) - (pos_previous[2] - hip_pos[2])) * dt;
+            err_dx_dt = ((pos_current[0] - pos_command[0]) - (pos_previous[0] - pos_command[0])) * dt;
+            err_dy_dt = ((pos_current[1] - pos_command[1]) - (pos_previous[1] - pos_command[1])) * dt;
+            err_dz_dt = ((pos_current[2] - pos_command[2]) - (pos_previous[2] - pos_command[2])) * dt;
 
             //Calculate force_setpoint
             force_setpoint[0] = (err_x * kp_x) + (err_dx_dt * kd_x);
@@ -149,4 +149,3 @@ int main()
     initializeFalcon();
     simulator();
 }
-

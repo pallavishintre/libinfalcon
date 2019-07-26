@@ -82,3 +82,26 @@ BUILDSYS_BUILD_EXE(
 # requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
 find_package(cppzmq)
 target_link_libraries(falcon_practice cppzmq)
+
+######################################################################################
+# Build function for falcon_practice
+######################################################################################
+
+SET(SRCS
+  falcon_client/falcon_client.cpp
+  ../util/util.cpp
+)
+
+BUILDSYS_BUILD_EXE(
+  NAME falcon_client
+  SOURCES "${SRCS}"
+  CXX_FLAGS "${DEFINE}"
+  LINK_LIBS "${LIBNIFALCON_EXE_PO_LINK_LIBS}"
+  LINK_FLAGS FALSE
+  DEPENDS nifalcon_cli_base
+  SHOULD_INSTALL TRUE
+)
+
+# requires installing zmq along with C++ bindings: https://github.com/zeromq/cppzmq
+find_package(cppzmq)
+target_link_libraries(falcon_client cppzmq)
