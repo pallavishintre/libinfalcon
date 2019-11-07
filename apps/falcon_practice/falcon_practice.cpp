@@ -31,11 +31,11 @@ using namespace libnifalcon;
     std::array<double, 3> pos_command = {0, 0, 0};
     std::array<double, 3> force_setpoint = {0, 0, 0};
     std::array<double, 3> pos_previous = dev.getPosition();
-    pos_previous[2] -= 0.12; //offset z
+    pos_previous[2] -= 0.125; //offset z
     //double kp_x = 250, kp_y = 250, kp_z = 250;    //Proportional gains
     //double kd_x = 10000000, kd_y = 10000000, kd_z = 10000000;  //Derivative gains
-    double kp_x = 100, kp_y = 100, kp_z = 100;    //Proportional gains
-    double kd_x = 1, kd_y = 1, kd_z = 1;  //Derivative gains
+    double kp_x = 100, kp_y = 1000, kp_z = 100;    //Proportional gains
+    double kd_x = 10, kd_y = 10, kd_z = 10;  //Derivative gains
     double err_x, err_y, err_z; //Proportional error
     double err_dx_dt = 0, err_dy_dt = 0, err_dz_dt = 0;  //Derivative error
     timespec prev_ts, current_ts;
@@ -50,7 +50,7 @@ using namespace libnifalcon;
 
             std::array<double, 3> pos_current = dev.getPosition();
             //offset z
-            pos_current[2] -= 0.12;
+            pos_current[2] -= 0.125;
 
             //            //Calculate error (difference in position between Falcon and HIP)
             //            err_x = hip_pos[0] - pos_current[0];
@@ -69,16 +69,16 @@ using namespace libnifalcon;
             //            err_dz_dt = hip_vel[2] - ((pos_current[2] - hip_pos[2]) - (pos_previous[2] - hip_pos[2])) * dt;
 
             //Calculate rate of change of error (difference in velocity between Falcon and HIP)
-            err_dx_dt = ((pos_current[0] - pos_command[0]) - (pos_previous[0] - pos_command[0])) * dt;
-            err_dy_dt = ((pos_current[1] - pos_command[1]) - (pos_previous[1] - pos_command[1])) * dt;
-            err_dz_dt = ((pos_current[2] - pos_command[2]) - (pos_previous[2] - pos_command[2])) * dt;
+            err_dx_dt = ((pos_current[0] - pos_command[0]) - (pos_previous[0] - pos_command[0])) / dt;
+            err_dy_dt = ((pos_current[1] - pos_command[1]) - (pos_previous[1] - pos_command[1])) / dt;
+            err_dz_dt = ((pos_current[2] - pos_command[2]) - (pos_previous[2] - pos_command[2])) / dt;
 
             //Calculate force_setpoint
-            force_setpoint[0] = (err_x * kp_x) + (err_dx_dt * kd_x);
-            force_setpoint[1] = (err_y * kp_y) + (err_dy_dt * kd_y);
-            force_setpoint[2] = (err_z * kp_z) + (err_dz_dt * kd_z);
+            force_setpoint[0] = (err_x * kp_x) - (err_dx_dt * kd_x);
+            force_setpoint[1] = (err_y * kp_y) - (err_dy_dt * kd_y);
+            force_setpoint[2] = (err_z * kp_z) - (err_dz_dt * kd_z);
 
-            double limit = 10.0;
+            double limit = 5.0;
 
             if (force_setpoint[0] > limit) {
                 force_setpoint[0] = limit;
@@ -99,13 +99,13 @@ using namespace libnifalcon;
                 force_setpoint[2] = -limit;
             }
 
-            printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
-                   "err_dx_dt:%6.3f|err_dy_dt:%6.3f|"
-                   "dt:%0.6f|nsec:%ld|sec:%f\n",
-                   pos_current[0], pos_current[1], force_setpoint[0], force_setpoint[1],
-                   err_dx_dt, err_dy_dt,
-                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0
-                   );
+//            printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
+//                   "err_dx_dt:%6.3f|err_dy_dt:%6.3f|"
+//                   "dt:%0.6f|nsec:%ld|sec:%f\n",
+//                   pos_current[0], pos_current[1], force_setpoint[0], force_setpoint[2],
+//                   err_dx_dt, err_dy_dt,
+//                   dt, current_ts.tv_nsec, current_ts.tv_nsec/1000000000.0
+//                   );
 
             //send force command to Falcon
             dev.setForce({force_setpoint[0], force_setpoint[1], force_setpoint[2]});
@@ -119,10 +119,11 @@ using namespace libnifalcon;
             //publish position at approx 30Hz
             if (sec_since_last_pub > 1/30.0) {
                 j_pub["force_x"] = -force_setpoint[0];
-                j_pub["force_y"] = -force_setpoint[1];
+                j_pub["force_y"] = 0; //-force_setpoint[1];
                 j_pub["force_z"] = -force_setpoint[2];
                 zmq::message_t contents(j_pub.dump());
                 pub.send(contents, zmq::send_flags::dontwait);
+                 std::cout << j_pub << std::endl;
                 sec_since_last_pub = 0;
             }
 
