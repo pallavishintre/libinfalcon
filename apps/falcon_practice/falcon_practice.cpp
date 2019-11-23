@@ -30,6 +30,7 @@ using namespace libnifalcon;
     std::array<double, 3> hip_vel = {0, 0, 0};
     std::array<double, 3> pos_command = {0, 0, 0};
     std::array<double, 3> force_setpoint = {0, 0, 0};
+    std::array<double, 3> force_send = {0, 0, 0};
     std::array<double, 3> pos_previous = dev.getPosition();
     pos_previous[2] -= 0.125; //offset z
     //double kp_x = 250, kp_y = 250, kp_z = 250;    //Proportional gains
@@ -78,26 +79,119 @@ using namespace libnifalcon;
             force_setpoint[1] = (err_y * kp_y) - (err_dy_dt * kd_y);
             force_setpoint[2] = (err_z * kp_z) - (err_dz_dt * kd_z);
 
-            double limit = 5.0;
 
-            if (force_setpoint[0] > limit) {
-                force_setpoint[0] = limit;
+
+                        double limit = 5.0;
+
+                        if (force_setpoint[0] > limit) {
+                            force_setpoint[0] = limit;
+                        }
+                        if (force_setpoint[0] < -limit) {
+                            force_setpoint[0] = -limit;
+                        }
+                        if (force_setpoint[1] > limit) {
+                            force_setpoint[1] = limit;
+                        }
+                        if (force_setpoint[1] < -limit) {
+                            force_setpoint[1] = -limit;
+                        }
+                        if (force_setpoint[2] > limit) {
+                            force_setpoint[2] = limit;
+                        }
+                        if (force_setpoint[2] < -limit) {
+                            force_setpoint[2] = -limit;
+                        }
+
+
+            double limit1 = 4.5;
+            double limit2 = 3.0;
+            double limit3 = 1.5;
+            double fval1 = 5.0;
+            double fval2 = 3.5;
+            double fval3 = 2.0;
+            double fval4 = 0.0;
+//Discretization for x in positive direction
+
+            if ((force_setpoint[0] < limit3) && (force_setpoint[0] >= -limit3)) {
+                force_send[0] = fval4;
             }
-            if (force_setpoint[0] < -limit) {
-                force_setpoint[0] = -limit;
+            else if ((force_setpoint[0] >= limit3) && (force_setpoint[0] < limit2)){
+                force_send[0] = fval3;
             }
-            if (force_setpoint[1] > limit) {
-                force_setpoint[1] = limit;
+            else if ((force_setpoint[0] >= limit2) && (force_setpoint[0] < limit1)){
+                force_send[0] = fval2;
             }
-            if (force_setpoint[1] < -limit) {
-                force_setpoint[1] = -limit;
+            else if (force_setpoint[0] >= limit1){
+                force_send[0] = fval1;
             }
-            if (force_setpoint[2] > limit) {
-                force_setpoint[2] = limit;
+
+//Discretization for x in negative direction
+
+            else if ((force_setpoint[0] < -limit3) && (force_setpoint[0] >= -limit2)){
+                force_send[0] = -fval3;
             }
-            if (force_setpoint[2] < -limit) {
-                force_setpoint[2] = -limit;
+            else if ((force_setpoint[0] < -limit2) && (force_setpoint[0] >= -limit1)){
+                force_send[0] = -fval2;
             }
+            else if (force_setpoint[0] < -limit1){
+                force_send[0] = -fval1;
+            }
+//Discretization for y in positive direction
+
+            if ((force_setpoint[1] < limit3) && (force_setpoint[1] >= -limit3)) {
+                force_send[1] = fval4;
+            }
+            else if ((force_setpoint[1] >= limit3) && (force_setpoint[1] < limit2)){
+                force_send[1] = fval3;
+            }
+            else if ((force_setpoint[1] >= limit2) && (force_setpoint[1] < limit1)){
+                force_send[1] = fval2;
+            }
+            else if (force_setpoint[1] >= limit1){
+                force_send[1] = fval1;
+            }
+
+//Discretization for y in negative direction
+
+            else if ((force_setpoint[1] < -limit3) && (force_setpoint[1] >= -limit2)){
+                force_send[1] = -fval3;
+            }
+            else if ((force_setpoint[1] < -limit2) && (force_setpoint[1] >= -limit1)){
+                force_send[1] = -fval2;
+            }
+            else if (force_setpoint[1] < -limit1){
+                force_send[1] = -fval1;
+            }
+
+
+//Discretization for z in positive direction
+
+            if ((force_setpoint[2] < limit3) && (force_setpoint[2] >= -limit3)) {
+                force_send[2] = fval4;
+            }
+            else if ((force_setpoint[2] >= limit3) && (force_setpoint[2] < limit2)){
+                force_send[2] = fval3;
+            }
+            else if ((force_setpoint[2] >= limit2) && (force_setpoint[2] < limit1)){
+                force_send[2] = fval2;
+            }
+            else if (force_setpoint[2] >= limit1){
+                force_send[2] = fval1;
+            }
+
+//Discretization for z in negative direction
+
+            else if ((force_setpoint[2]< -limit3) && (force_setpoint[2]>= -limit2)){
+                force_send[2] = -fval3;
+            }
+            else if ((force_setpoint[2] < -limit2) && (force_setpoint[2] >= -limit1)){
+                force_send[2] = -fval2;
+            }
+            else if (force_setpoint[2]< -limit1){
+                force_send[2] = -fval1;
+            }
+
+
 
 //            printf("x:%6.3f|y:%6.3f|xf:%5.2f|yf:%5.2f|"
 //                   "err_dx_dt:%6.3f|err_dy_dt:%6.3f|"
@@ -118,9 +212,9 @@ using namespace libnifalcon;
 
             //publish position at approx 30Hz
             if (sec_since_last_pub > 1/30.0) {
-                j_pub["force_x"] = -force_setpoint[0];
-                j_pub["force_y"] = 0; //-force_setpoint[1];
-                j_pub["force_z"] = -force_setpoint[2];
+                j_pub["force_x"] = -force_send[0];
+                j_pub["force_y"] = 0; //-force_send[1];
+                j_pub["force_z"] = -force_send[2];
                 zmq::message_t contents(j_pub.dump());
                 pub.send(contents, zmq::send_flags::dontwait);
                  std::cout << j_pub << std::endl;
@@ -133,7 +227,7 @@ using namespace libnifalcon;
                 std::string str(static_cast<char*>(contents.data()), contents.size());
                 j_sub = nlohmann::json::parse(str);
                 std::cout << j_sub.dump() << std::endl;
-                printf("%5.3f\t%5.3f\t%5.3f", force_setpoint[0], force_setpoint[1], force_setpoint[2]);
+               // printf("%5.3f\t%5.3f\t%5.3f", force_setpoint[0], force_setpoint[1], force_setpoint[2]);
                 hip_pos[0] = j_sub["Position"][0].get<double>() / 100;
                 hip_pos[1] = j_sub["Position"][1].get<double>() / 100;
                 hip_pos[2] = j_sub["Position"][2].get<double>() / 100;

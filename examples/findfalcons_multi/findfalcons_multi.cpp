@@ -87,8 +87,7 @@ void runFalconTest()
 	std::cout << "Opening falcons" << std::endl;
 
 	dev.clear();
-	
-	for(int i = 0; i < num_falcons; ++i)
+    for(int i = 0; i < num_falcons; ++i)
 	{
 		dev.push_back(FalconDevice());
 		dev[i].setFalconFirmware<FalconFirmwareNovintSDK>();
@@ -99,36 +98,36 @@ void runFalconTest()
 			return;
 		}
 		std::cout << "Opened falcon" << std::endl;
-	}		
-	for(int i = 0; i < num_falcons; ++i)
-	{
-		if(!dev[i].isFirmwareLoaded())
-		{
-			std::cout << "Loading firmware" << std::endl;
-			for(int z = 0; z < 10; ++z)
-			{
-				if(!dev[i].getFalconFirmware()->loadFirmware(true, NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(NOVINT_FALCON_NVENT_FIRMWARE)))
-				{
-					std::cout << "Could not load firmware" << std::endl;
-					return;
-				}
-				else
-				{
-					std::cout <<"Firmware loaded" << std::endl;
-					break;
-				}
-			}
-			if(!dev[i].isFirmwareLoaded())
-			{
-				std::cout << "Firmware didn't load correctly. Try running findfalcons again" << std::endl;
-				return;
-			}
-		}
-	}
+    }
+    for(int i = 0; i < num_falcons; ++i)
+    {
+        if(!dev[i].isFirmwareLoaded())
+        {
+            std::cout << "Loading firmware for falcon " << i << std::endl;
+            for(int z = 0; z < 10; ++z)
+            {
+                if(!dev[i].getFalconFirmware()->loadFirmware(true, NOVINT_FALCON_NVENT_FIRMWARE_SIZE, const_cast<uint8_t*>(NOVINT_FALCON_NVENT_FIRMWARE)))
+                {
+                    std::cout << "Could not load firmware" << std::endl;
+                    //return;
+                }
+                else
+                {
+                    std::cout <<"Firmware loaded" << std::endl;
+                    break;
+                }
+            }
+            if(!dev[i].isFirmwareLoaded())
+            {
+                std::cout << "Firmware didn't load correctly. Try running findfalcons again" << std::endl;
+                //return;
+            }
+        }
+    }
 
 	for(int i = 0; i < num_falcons; ++i)
 	{
-		f = dev[i].getFalconFirmware();
+        f = dev[i].getFalconFirmware();
 		for(int j = 0; j < 3; ++j)
 		{
 			f->setLEDStatus(2 << (j % 3));

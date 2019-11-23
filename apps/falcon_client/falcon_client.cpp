@@ -4,22 +4,23 @@ using namespace libnifalcon;
 
 static nlohmann::json json;
 static std::array<double, 3> force_setpoint = {0, 0, 0};
+static std::array<double, 3> force_send = {0, 0, 0};
 
 [[noreturn]] void req_comm() {
     sleep(1);   //Give time for falcon to stabalize
 
     zmq::context_t context;
     zmq::socket_t req = zmq::socket_t(context, zmq::socket_type::req);
-    std::string reqSocketStr = "tcp://localhost:5560";
+    std::string reqSocketStr = "tcp://10.203.53.193:5560";
     req.connect(reqSocketStr);
     req.setsockopt(ZMQ_RCVTIMEO, 500);
     std::cout << "Requester socket connected to " << reqSocketStr << std::endl;
 
     while (true) {
         json["ID"] = 1;
-        json["force_x"] = -force_setpoint[0];
-        json["force_y"] = -force_setpoint[1];
-        json["force_z"] = -force_setpoint[2];
+        json["force_x"] = -force_send[0];
+        json["force_y"] = -force_send[1];
+        json["force_z"] = -force_send[2];
         zmq::message_t contents(json.dump());
         req.send(contents, zmq::send_flags::none);
         std::cout << "sent " + json.dump() << std::endl;
@@ -49,20 +50,73 @@ static std::array<double, 3> force_setpoint = {0, 0, 0};
 
             std::array<double, 3> pos_current = dev.getPosition();
             //offset z
-            pos_current[2] -= 0.12;
+            pos_current[2] -= 0.125;
 
-            double limit = 10.0;
+            double limit = 5.0;
+            double limit1 = 4.5;
+            double limit2 = 3.0;
+            double limit3 = 1.5;
+            double fval1 = 5.0;
+            double fval2 = 3.5;
+            double fval3 = 2.0;
+            double fval4 = 0.0;
 
             //Calculate proportional error, derivative error, and force setpoint
             for (unsigned i = 0; i < 3; i++){
                 err[i] = pos_command[i] - pos_current[i];   //Proportional error
-                err_dt[i] = ((pos_current[i] - pos_command[i]) - (pos_previous[i] - pos_command[i])) * dt;  //Derivative error
+                err_dt[i] = ((pos_command[i] - pos_current[i]) - (pos_command[i] - pos_previous[i])) / dt;  //Derivative error
                 force_setpoint[i] = (err[i] * kp[i]) + (err_dt[i] * kd[i]); //Force setpoint
 
                 //Make sure applied force isn't too much
                 if (force_setpoint[i] > limit) force_setpoint[i] = limit;
                 else if (force_setpoint[i] < -limit) force_setpoint[i] = -limit;
+
+
+
+//Discretization for x in positive direction
+
+            if ((force_setpoint[0] < limit3) && (force_setpoint[0] >= -limit3)) {
+                force_send[0] = fval4;
             }
+            else if ((force_setpoint[0] >= limit3) && (force_setpoint[0] < limit2)){
+                force_send[0] = fval3;
+            }
+            else if ((force_setpoint[0] >= limit2) && (force_setpoint[0] < limit1)){
+                force_send[0] = fval2;
+            }
+            else if (force_setpoint[0] >= limit1){
+                force_send[0] = fval1;
+            }
+
+//Discretization for x in negative direction
+
+            else if ((force_setpoint[0] < -limit3) && (force_setpoint[0] >= -limit2)){
+                force_send[0] = -fval3;
+            }
+            else if ((force_setpoint[0] < -limit2) && (force_setpoint[0] >= -limit1)){
+                force_send[0] = -fval2;
+            }
+            else if (force_setpoint[0] < -limit1){
+                force_send[0] = -fval1;
+            }
+//Discretization for y in positive direction
+
+            if ((force_setpoint[1] < limit3) && (force_setpoint[1] >= -limit3)) {
+                force_send[1] = fval4;
+            }
+            else if ((force_setpoint[1] >= limit3) && (force_setpoint[1] < limit2)){
+                force_send[1] = fval3;
+            }
+            else if ((force_setpoint[1] >= limit2) && (force_setpoint[1] < limit1)){
+                force_send[1] = fval2;
+            }
+            else if (force_setpoint[1] >= limit1){
+                force_send[1] = fval1;
+            }
+            }
+
+
+
 
             //If you want to monitor things
             if (!!false) {
