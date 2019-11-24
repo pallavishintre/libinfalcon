@@ -12,7 +12,8 @@ static std::array<double, 3> force_send = {0, 0, 0};
 
     zmq::context_t context;
     zmq::socket_t req = zmq::socket_t(context, zmq::socket_type::req);
-    std::string reqSocketStr = "tcp://10.203.53.193:5560";
+    //std::string reqSocketStr = "tcp://10.203.53.193:5560";
+    std::string reqSocketStr = "tcp://localhost:5560";
     req.connect(reqSocketStr);
     req.setsockopt(ZMQ_RCVTIMEO, 500);
     std::cout << "Requester socket connected to " << reqSocketStr << std::endl;
@@ -20,7 +21,7 @@ static std::array<double, 3> force_send = {0, 0, 0};
     while (true) {
         json["ID"] = 1;
         json["force_x"] = -force_send[0];
-        json["force_y"] = -force_send[1];
+        json["force_y"] =0    //-force_send[1];
         json["force_z"] = -force_send[2];
         zmq::message_t contents(json.dump());
         req.send(contents, zmq::send_flags::none);
@@ -44,7 +45,7 @@ static std::array<double, 3> force_send = {0, 0, 0};
     pub.bind(pubSocket);
     int hwm_limit = 1;
     pub.setsockopt(ZMQ_SNDHWM, &hwm_limit, sizeof(hwm_limit));
-    pub.setsockopt(ZMQ_SNDBUF, &hwm_limit, sizeof(hwm_limit));
+    //pub.setsockopt(ZMQ_SNDBUF, &hwm_limit, sizeof(hwm_limit));
     std::cout << "Publisher socket connected" << std::endl;
 
     timespec prev_ts, current_ts;
