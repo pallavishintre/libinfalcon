@@ -3,6 +3,7 @@
 using namespace libnifalcon;
 
 static nlohmann::json json;
+static nlohmann::json j_pub;
 static std::array<double, 3> force_setpoint = {0, 0, 0};
 static std::array<double, 3> force_send = {0, 0, 0};
 
@@ -30,6 +31,48 @@ static std::array<double, 3> force_send = {0, 0, 0};
     }
 }
 
+
+// start
+
+[[noreturn]] void pub_disc_comm() {
+    sleep(1);   //Give time for falcon to stabalize
+
+    zmq::context_t context;
+    zmq::socket_t pub = zmq::socket_t(context, zmq::socket_type::pub);
+    //std::string reqSocketStr = "tcp://10.203.53.193:5560";
+    std::string pubSocket = "tcp://*:1500";
+    pub.bind(pubSocket);
+    int hwm_limit = 1;
+    pub.setsockopt(ZMQ_SNDHWM, &hwm_limit, sizeof(hwm_limit));
+    pub.setsockopt(ZMQ_SNDBUF, &hwm_limit, sizeof(hwm_limit));
+    std::cout << "Publisher socket connected" << std::endl;
+
+    timespec prev_ts, current_ts;
+    double dt;
+    double sec_since_last_pub = 0;
+    clock_gettime(CLOCK_REALTIME, &prev_ts);
+
+    while (true) {
+        if (sec_since_last_pub > 1/30.0) {
+                        j_pub["force_x"] = -force_send[0];
+                        j_pub["force_y"] = -force_send[1];
+                        j_pub["force_z"] = -force_send[2];
+                        zmq::message_t contents(j_pub.dump());
+                        pub.send(contents, zmq::send_flags::dontwait);
+                         std::cout << j_pub << std::endl;
+                        sec_since_last_pub = 0;
+                    }
+    }
+}
+
+
+
+
+//stop
+
+
+
+
 [[noreturn]] void simulator() {
     std::array<double, 3> pos_command = {0, 0, 0};
     std::array<double, 3> pos_previous = dev.getPosition();
@@ -42,6 +85,9 @@ static std::array<double, 3> force_send = {0, 0, 0};
     double dt;
     clock_gettime(CLOCK_REALTIME, &prev_ts);
     std::thread host_comm (req_comm);
+    std::thread pub_comm (pub_disc_comm);
+    //host_comm.join();
+    //pub_comm.join();
     while (true) {
         if (dev.runIOLoop()) {
             clock_gettime(CLOCK_REALTIME, &current_ts);
@@ -75,44 +121,31 @@ static std::array<double, 3> force_send = {0, 0, 0};
 
 //Discretization for x in positive direction
 
-            if ((force_setpoint[0] < limit3) && (force_setpoint[0] >= -limit3)) {
-                force_send[0] = fval4;
+            if ((force_setpoint[i] < limit3) && (force_setpoint[i] >= -limit3)) {
+                force_send[i] = fval4;
             }
-            else if ((force_setpoint[0] >= limit3) && (force_setpoint[0] < limit2)){
-                force_send[0] = fval3;
+            else if ((force_setpoint[i] >= limit3) && (force_setpoint[i] < limit2)){
+                force_send[i] = fval3;
             }
-            else if ((force_setpoint[0] >= limit2) && (force_setpoint[0] < limit1)){
-                force_send[0] = fval2;
+            else if ((force_setpoint[i] >= limit2) && (force_setpoint[i] < limit1)){
+                force_send[i] = fval2;
             }
-            else if (force_setpoint[0] >= limit1){
-                force_send[0] = fval1;
+            else if (force_setpoint[i] >= limit1){
+                force_send[i] = fval1;
             }
 
 //Discretization for x in negative direction
 
-            else if ((force_setpoint[0] < -limit3) && (force_setpoint[0] >= -limit2)){
-                force_send[0] = -fval3;
+            else if ((force_setpoint[i] < -limit3) && (force_setpoint[i] >= -limit2)){
+                force_send[i] = -fval3;
             }
-            else if ((force_setpoint[0] < -limit2) && (force_setpoint[0] >= -limit1)){
-                force_send[0] = -fval2;
+            else if ((force_setpoint[i] < -limit2) && (force_setpoint[i] >= -limit1)){
+                force_send[i] = -fval2;
             }
-            else if (force_setpoint[0] < -limit1){
-                force_send[0] = -fval1;
+            else if (force_setpoint[i] < -limit1){
+                force_send[i] = -fval1;
             }
-//Discretization for y in positive direction
 
-            if ((force_setpoint[1] < limit3) && (force_setpoint[1] >= -limit3)) {
-                force_send[1] = fval4;
-            }
-            else if ((force_setpoint[1] >= limit3) && (force_setpoint[1] < limit2)){
-                force_send[1] = fval3;
-            }
-            else if ((force_setpoint[1] >= limit2) && (force_setpoint[1] < limit1)){
-                force_send[1] = fval2;
-            }
-            else if (force_setpoint[1] >= limit1){
-                force_send[1] = fval1;
-            }
             }
 
 
