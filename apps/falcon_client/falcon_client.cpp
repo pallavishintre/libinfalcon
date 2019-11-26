@@ -21,14 +21,14 @@ static std::array<double, 3> force_send = {0, 0, 0};
     while (true) {
         json["ID"] = 1;
         json["force_x"] = -force_send[0];
-        json["force_y"] =0    //-force_send[1];
+        json["force_y"] =0;    //-force_send[1];
         json["force_z"] = -force_send[2];
         zmq::message_t contents(json.dump());
         req.send(contents, zmq::send_flags::none);
-        std::cout << "sent " + json.dump() << std::endl;
+      //  std::cout << "sent " + json.dump() << std::endl;
         req.recv(contents, zmq::recv_flags::none);
         std::string str(static_cast<char*>(contents.data()), contents.size());
-        std::cout << "received " + str << std::endl;
+      //  std::cout << "received " + str << std::endl;
     }
 }
 
@@ -40,7 +40,6 @@ static std::array<double, 3> force_send = {0, 0, 0};
 
     zmq::context_t context;
     zmq::socket_t pub = zmq::socket_t(context, zmq::socket_type::pub);
-    //std::string reqSocketStr = "tcp://10.203.53.193:5560";
     std::string pubSocket = "tcp://*:1500";
     pub.bind(pubSocket);
     int hwm_limit = 1;
@@ -48,21 +47,21 @@ static std::array<double, 3> force_send = {0, 0, 0};
     //pub.setsockopt(ZMQ_SNDBUF, &hwm_limit, sizeof(hwm_limit));
     std::cout << "Publisher socket connected" << std::endl;
 
-    timespec prev_ts, current_ts;
-    double dt;
-    double sec_since_last_pub = 0;
-    clock_gettime(CLOCK_REALTIME, &prev_ts);
+   // timespec prev_ts, current_ts;
+   // double dt;
+   // double sec_since_last_pub = 0;
+  //  clock_gettime(CLOCK_REALTIME, &prev_ts);
 
     while (true) {
-        if (sec_since_last_pub > 1/30.0) {
+       // if (sec_since_last_pub > 1/30.0) {
                         j_pub["force_x"] = -force_send[0];
                         j_pub["force_y"] = -force_send[1];
                         j_pub["force_z"] = -force_send[2];
                         zmq::message_t contents(j_pub.dump());
                         pub.send(contents, zmq::send_flags::dontwait);
                          std::cout << j_pub << std::endl;
-                        sec_since_last_pub = 0;
-                    }
+                       // sec_since_last_pub = 0;
+                 //   }
     }
 }
 
